@@ -1,4 +1,4 @@
-import { createLucidInstance, getCredential } from "../lucid/utils.ts";
+import { createLucidInstance, getCredential } from "../mod.ts";
 
 const lucid = await createLucidInstance();
 
