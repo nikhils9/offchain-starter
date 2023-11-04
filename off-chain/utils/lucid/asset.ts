@@ -1,13 +1,12 @@
 import { BLOCKFROST_URL } from "../../common/constants.ts";
 import { getBlockfrostProvider, lucid, sumUtxos } from "./mod.ts";
-import { fromUnit, Unit } from "lucid";
+import { fromHex, fromUnit, toHex, Unit, UTxO } from "lucid";
 
 export async function getAssetsWithPolicyIdAt(
   address: string,
   policyId: string,
 ): Promise<Unit[]> {
   const utxos = await lucid.utxosAt(address);
-  lucid.selectWalletFrom({ address: address });
 
   const allAssets = sumUtxos(utxos);
   delete allAssets["lovelace"];
@@ -38,4 +37,20 @@ export async function getAssetInfo(unit: Unit): Promise<any> {
     throw new Error("Asset infomation not found." + info.error);
   }
   return info;
+}
+
+// Returns a unique asset name suffix using a utxo's txid and idx
+// The asset label (as per CIP68) can then prefixed to the name for a unique asset name
+export async function getUniqueAssetNameSuffix(utxo: UTxO): Promise<string> {
+  const hash = new Uint8Array(
+    await crypto.subtle.digest(
+      "SHA3-256",
+      fromHex(utxo.txHash),
+    ),
+  );
+
+  // Create unique asset name suffix of 28 bytes. The remaining 4 bytes come
+  // from the asset label as a prefix.
+  return toHex(new Uint8Array([utxo.outputIndex])) +
+    toHex(hash.slice(0, 27));
 }
